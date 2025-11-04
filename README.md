@@ -11,7 +11,7 @@
 Ensure you have Go installed on your system. Then, in the project directory, run:
 
 ```
-go build
+go build -o lbfq
 ```
 
 This will create an executable binary named `lbfq` (or `lbfq.exe` on Windows).
