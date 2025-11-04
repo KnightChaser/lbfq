@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -20,7 +21,7 @@ type Config struct {
 	MinSize  int64
 	XDev     bool
 	Apparent bool
-	Workers  int
+	Workers  int      // 0 means auto-tune based on CPU cores
 	Skips    []string // path prefixes to skip scanning (/proc, /sys, ...)
 }
 
@@ -29,7 +30,7 @@ type Config struct {
 func Scan(cfg Config) <-chan Result {
 	if cfg.Workers <= 0 {
 		// NOTE: Assume there are enough I/O operations to keep 8 workers busy.
-		cfg.Workers = 8
+		cfg.Workers = autoWorkers()
 	}
 	paths := make(chan string, 4096)
 	results := make(chan Result, 4096)
@@ -118,6 +119,25 @@ func Scan(cfg Config) <-chan Result {
 	}()
 
 	return results
+}
+
+// Calculate an automatic number of workers based on CPU cores
+func autoWorkers() int {
+	n := runtime.NumCPU()
+	if n < 1 {
+		n = 1
+	}
+
+	// Considering IO-bound, we expect a performance benefit
+	// by oversubscribing workers by a factor of 2.
+	n *= 2
+	if n < 4 {
+		n = 4
+	}
+	if n > 64 {
+		n = 64
+	}
+	return n
 }
 
 // Check if path has any of the given prefixes

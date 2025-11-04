@@ -17,7 +17,7 @@ func main() {
 	minStr := flag.String("min", "0", "only list files >= size (e.g. 100M, 1G)")
 	xdev := flag.Bool("xdev", true, "stay on the same filesystem")
 	apparent := flag.Bool("apparent", false, "use apparent size instead of on-disk bytes")
-	workers := flag.Int("workers", 8, "concurrent stat workers")
+	workers := flag.Int("workers", 0, "concurrent stat workers")
 	flag.Parse()
 
 	minSize, err := units.ParseSize(*minStr)
@@ -31,7 +31,8 @@ func main() {
 		MinSize:  minSize,
 		XDev:     *xdev,
 		Apparent: *apparent,
-		Workers:  *workers,
+		// NOTE: 0 workers means auto-tune based on CPU cores
+		Workers: *workers,
 		// NOTE:
 		// Hard-coded skips for common virtual filesystems.
 		// They're usually not interesting for disk usage analysis.
