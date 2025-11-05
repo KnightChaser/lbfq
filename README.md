@@ -2,6 +2,9 @@
 
 > **L**ist **B**ig **F**iles **Q**uickly!
 
+<img width="1000" height="330" alt="image" src="https://github.com/user-attachments/assets/6b3f537e-9b50-4448-9739-38d6b7dfd8e6" />
+
+
 ## What is this for
 
 `lbfq` is a command-line tool written in Go that scans a directory tree and identifies the largest files. It can be useful for disk usage analysis, finding space-consuming files, and cleaning up storage.
