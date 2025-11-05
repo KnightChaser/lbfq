@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"lbfq/internal/scan"
 	"lbfq/internal/topn"
@@ -20,6 +21,7 @@ func main() {
 	apparent := flag.Bool("apparent", false, "use apparent size instead of on-disk bytes")
 	workers := flag.Int("workers", 0, "concurrent stat workers")
 	ndjson := flag.Bool("ndjson", false, "print results as newline-delimited JSON(NDJSON) format")
+	excludeGlobs := flag.String("exclude-globs", "", "comma-separated list of glob patterns to exclude from scan")
 	flag.Parse()
 
 	minSize, err := units.ParseSize(*minStr)
@@ -38,7 +40,8 @@ func main() {
 		// NOTE:
 		// Hard-coded skips for common virtual filesystems.
 		// They're usually not interesting for disk usage analysis.
-		Skips: []string{"/proc", "/sys", "/run", "/dev"},
+		Skips:        []string{"/proc", "/sys", "/run", "/dev"},
+		ExcludeGlobs: splitGlobs(*excludeGlobs),
 	}
 
 	keeper := topn.NewKeeper(*topN)
@@ -73,4 +76,21 @@ func main() {
 	for _, it := range items {
 		fmt.Printf("%12s  %s\n", units.Human(it.Size), it.Path)
 	}
+}
+
+// splitGlobs splits a comma-separated list of globs into a slice.
+func splitGlobs(s string) []string {
+	if s == "" {
+		return nil
+	}
+
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }

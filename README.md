@@ -21,7 +21,8 @@ This will create an executable binary named `lbfq` (or `lbfq.exe` on Windows).
 Run the compiled binary with the desired options. For example:
 
 ```sh
-sudo ./lbfq -root /path/to/directory -n 10 -min 100M
+sudo ./lbfq -root /path/to/directory -n 10 -exclude-globs "/usr/share/ollama/*,*.safetensors"
 ```
 
-Options can be found by running `./lbfq --help`. 
+Options can be found by running `./lbfq --help`.
+

@@ -17,12 +17,13 @@ type Result struct {
 }
 
 type Config struct {
-	Root     string
-	MinSize  int64
-	XDev     bool
-	Apparent bool
-	Workers  int      // 0 means auto-tune based on CPU cores
-	Skips    []string // path prefixes to skip scanning (/proc, /sys, ...)
+	Root         string
+	MinSize      int64
+	XDev         bool
+	Apparent     bool
+	Workers      int      // 0 means auto-tune based on CPU cores
+	Skips        []string // hard prefixes to skip (e.g. /proc)
+	ExcludeGlobs []string // user globs matched on full path (e.g. *.log)
 }
 
 // Scan walks the tree and streams file results >= MinSize into the returned channel.
@@ -58,8 +59,15 @@ func Scan(cfg Config) <-chan Result {
 				return nil
 			}
 
-			// NOTE: Prune skipped prefixes
+			// NOTE: Prune skipped prefixes and excluded globs
 			if hasPrefix(path, cfg.Skips) {
+				if d.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+
+			if matchAnyGlob(path, cfg.ExcludeGlobs) {
 				if d.IsDir() {
 					return filepath.SkipDir
 				}
@@ -119,6 +127,27 @@ func Scan(cfg Config) <-chan Result {
 	}()
 
 	return results
+}
+
+// Check if path matches any of the given globs
+func matchAnyGlob(path string, globs []string) bool {
+	if len(globs) == 0 {
+		return false
+	}
+
+	p := filepath.Clean(path)
+	for _, g := range globs {
+		g = strings.TrimSpace(g)
+		if g == "" {
+			continue
+		}
+
+		// match against the full path
+		if ok, _ := filepath.Match(g, p); ok {
+			return true
+		}
+	}
+	return false
 }
 
 // Calculate an automatic number of workers based on CPU cores
